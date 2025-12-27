@@ -1,4 +1,4 @@
-package com.phreaks.webworkshop.server;
+package com.phreaks.workshop.web.server;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
