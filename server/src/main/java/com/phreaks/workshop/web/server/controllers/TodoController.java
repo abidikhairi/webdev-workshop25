@@ -8,6 +8,7 @@ import com.phreaks.workshop.web.server.models.Todo;
 import com.phreaks.workshop.web.server.repositories.ProjectRepository;
 import com.phreaks.workshop.web.server.repositories.TodoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
 import java.util.Properties;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/todo")
@@ -79,5 +81,23 @@ public class TodoController {
 
         return response;
     }
+    @RequestMapping(method = RequestMethod.GET, path = "/project/{projectId}")
+        public Properties getProjectTodos(@PathVariable Long projectId) {
+            Properties response = new Properties();
+
+            // Check if project exists
+            Optional<Project> projectOpt = projectRepository.findById(projectId);
+            if (projectOpt.isEmpty()) {
+                response.put("error", "Project with id=" + projectId + " not found");
+                return response;
+            }
+
+            // Fetch todos for the project
+            List<Todo> todos = todoRepository.findByProjectId(projectId);
+
+            response.put("message", "Todos fetched successfully");
+            response.put("todos", todos);
+            return response;
+        }
 
 }
