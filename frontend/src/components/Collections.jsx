@@ -2,37 +2,79 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 function Collections() {
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const [x, setX] = useState("");
   const [collection, setCollection] = useState([]);
 
   /* ---------- Placeholder API Calls ---------- */
 
   const fetchCollections = async () => {
-    // TODO: Replace with actual HTTP request
-    console.log("Fetching collections...");
-    return [
-      { name: "Work", count: 99 },
-      { name: "Errands", count: 3 },
-    ];
+    const res = await fetch(`${apiUrl}/api/project`);
+    if (!res.ok) throw new Error("Failed to fetch collections");
+    return res.json();
   };
 
   const addCollectionRequest = async (newCollection) => {
-    // TODO: Replace with actual HTTP request
-    console.log("Adding collection:", newCollection);
-    return { success: true };
+    try {
+      const response = await fetch(`${apiUrl}/api/project`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newCollection),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Project added:", data);
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error adding project:", error);
+      return { success: false, error };
+    }
   };
 
+  const deleteCollectionRequest = async (collectionId) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/project/${collectionId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // include cookies/auth if needed
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Collection deleted:", data);
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error deleting collection:", error);
+      return { success: false, error };
+    }
+  };
+  /* 
   const deleteCollectionRequest = async (index) => {
     // TODO: Replace with actual HTTP request
     console.log("Deleting collection at index:", index);
     return { success: true };
-  };
+  }; */
 
   /* ---------- Lifecycle ---------- */
   useEffect(() => {
+    console.log(apiUrl);
     const loadCollections = async () => {
       const data = await fetchCollections();
-      setCollection(data);
+
+      console.log(data.projects);
+      setCollection(data.projects);
     };
     loadCollections();
   }, []);
@@ -54,10 +96,12 @@ function Collections() {
     }
   };
 
-  const handleDelete = async (index) => {
-    const res = await deleteCollectionRequest(index);
+  const handleDelete = async (projectId) => {
+    const res = await deleteCollectionRequest(projectId);
     if (res.success) {
-      setCollection((prev) => prev.filter((_, i) => i !== index));
+      setCollection((prev) =>
+        prev.filter((project) => project.id !== projectId)
+      );
     }
   };
 
@@ -78,16 +122,17 @@ function Collections() {
         <tbody>
           {collection.map((c, index) => (
             <tr key={index}>
+              <td>{index + 1}</td>
               <td>
-                <Link to={`/todo/${c.name}`}>{c.name}</Link>
+                <Link to={`/todo/${c.id}`}>{c.name}</Link>
               </td>
-              <td>{c.count}</td>
+              <td>{c.todos?.length || 0}</td>
               <td>
                 <button
                   className="btn-floating btn-medium waves-effect waves-light red"
-                  onClick={() => handleDelete(index)}
+                  onClick={() => handleDelete(c.id)}
                 >
-                  <i class="large material-icons">delete_forever</i>
+                  <i className="large material-icons">delete_forever</i>
                 </button>
               </td>
             </tr>
@@ -99,7 +144,7 @@ function Collections() {
 
       <form onSubmit={handleSubmit}>
         <div className="row">
-          <div class="input-field col s6">
+          <div className="input-field col s6">
             <input
               className="validate"
               id="collection_name"
@@ -107,9 +152,9 @@ function Collections() {
               value={x}
               onChange={(e) => setX(e.target.value)}
             />
-            <label for="collection_name">Collection name</label>
+            <label htmlFor="collection_name">Collection name</label>
           </div>
-          <div class="col s4">
+          <div className="col s4">
             <button className="waves-effect waves-light btn" type="submit">
               Add collection
             </button>
