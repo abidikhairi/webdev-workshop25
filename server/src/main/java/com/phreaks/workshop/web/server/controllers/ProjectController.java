@@ -3,7 +3,11 @@ package com.phreaks.workshop.web.server.controllers;
 import com.phreaks.workshop.web.server.dtos.ProjectDto;
 import com.phreaks.workshop.web.server.models.Project;
 import com.phreaks.workshop.web.server.repositories.ProjectRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +16,8 @@ import java.util.Properties;
 @RestController
 @RequestMapping("/api/project")
 public class ProjectController {
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOrigin;  // Injected from application.properties or application.yml
 
     @Autowired
     ProjectRepository projectRepository;
@@ -34,18 +40,26 @@ public class ProjectController {
         return response;
     }
 
-    @RequestMapping(method = RequestMethod.GET, path = "")
-    public Properties index() {
-        Properties response = new Properties();
+@RequestMapping(method = RequestMethod.GET, path = "")
+public Properties index(HttpServletRequest request) {
 
-        // select * from t_projects;
-        List<Project> projectList = projectRepository.findAll();
+    // Get the request origin
+    String requestOrigin = request.getHeader("Origin");
 
-        response.put("projects", projectList);
-        response.put("message", "All projects fetched successfully!!");
+    // Print origins
+    System.out.println("Allowed Origin: " + allowedOrigin);
+    System.out.println("Request Origin: " + requestOrigin);
 
-        return response;
-    }
+    Properties response = new Properties();
+
+    // Fetch all projects
+    List<Project> projectList = projectRepository.findAll();
+
+    response.put("projects", projectList);
+    response.put("message", "All projects fetched successfully!!");
+
+    return response;
+}
 
     @RequestMapping(method = RequestMethod.DELETE, path = "/{projectId}")
     // DELETE +> /api/project/1 +> delete where project_id = 1
